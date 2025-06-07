@@ -1,0 +1,310 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp, PlusCircle, MinusCircle, XCircle, ShoppingCart, Utensils, Search, Filter, Printer, DollarSign, Clock, Users, List, Grid, Trash2, Edit3, Save, LogOut, Settings, BarChart2, Package, BookOpen, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+
+// Mock Data
+const mockCategories = [
+  { id: 'cat1', name: 'Appetizers', icon: <Utensils size={20} /> },
+  { id: 'cat2', name: 'Main Course', icon: <Utensils size={20} /> },
+  { id: 'cat3', name: 'Beverages', icon: <ShoppingCart size={20} /> },
+  { id: 'cat4', name: 'Desserts', icon: <ShoppingCart size={20} /> },
+  { id: 'cat5', name: 'Breads & Rice', icon: <Utensils size={20} /> },
+];
+
+const mockMenuItems = [
+  // Appetizers
+  { id: 'item1', categoryId: 'cat1', name: 'Paneer Tikka', price: 250, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Paneer+Tikka', tags: ['Veg', 'Bestseller'], description: 'Grilled cottage cheese cubes marinated in spices.' },
+  { id: 'item2', categoryId: 'cat1', name: 'Chicken Wings', price: 300, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Chicken+Wings', tags: ['Non-Veg', 'Spicy'], description: 'Spicy chicken wings tossed in BBQ sauce.' },
+  { id: 'item3', categoryId: 'cat1', name: 'Veg Spring Rolls', price: 180, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Spring+Rolls', tags: ['Veg'], description: 'Crispy fried rolls with vegetable filling.' },
+  // Main Course
+  { id: 'item4', categoryId: 'cat2', name: 'Butter Chicken', price: 450, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Butter+Chicken', tags: ['Non-Veg', "Chef's Special"], description: 'Creamy and rich chicken curry.' },
+  { id: 'item5', categoryId: 'cat2', name: 'Dal Makhani', price: 350, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Dal+Makhani', tags: ['Veg'], description: 'Classic black lentils and kidney beans curry.' },
+  { id: 'item6', categoryId: 'cat2', name: 'Mutton Rogan Josh', price: 550, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Rogan+Josh', tags: ['Non-Veg', 'Spicy'], description: 'Aromatic Kashmiri lamb curry.' },
+  // Beverages
+  { id: 'item7', categoryId: 'cat3', name: 'Masala Chai', price: 80, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Masala+Chai', tags: ['Veg'], description: 'Spiced Indian tea.' },
+  { id: 'item8', categoryId: 'cat3', name: 'Fresh Lime Soda', price: 120, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Lime+Soda', tags: ['Veg'], description: 'Refreshing sweet and salty lime soda.' },
+  // Desserts
+  { id: 'item9', categoryId: 'cat4', name: 'Gulab Jamun', price: 150, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Gulab+Jamun', tags: ['Veg', 'Bestseller'], description: 'Sweet milk dumplings in syrup.' },
+  { id: 'item10', categoryId: 'cat4', name: 'Chocolate Brownie', price: 200, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Brownie', tags: ['Veg'], description: 'Warm chocolate brownie with ice cream.' },
+   // Breads & Rice
+  { id: 'item11', categoryId: 'cat5', name: 'Tandoori Roti', price: 40, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Tandoori+Roti', tags: ['Veg'], description: 'Whole wheat bread baked in tandoor.' },
+  { id: 'item12', categoryId: 'cat5', name: 'Garlic Naan', price: 60, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Garlic+Naan', tags: ['Veg'], description: 'Soft leavened bread with garlic.' },
+  { id: 'item13', categoryId: 'cat5', name: 'Jeera Rice', price: 150, image: 'https://placehold.co/150x150/F2F2F2/333333?text=Jeera+Rice', tags: ['Veg'], description: 'Cumin flavored basmati rice.' },
+];
+
+// Helper to get tag color
+const getTagColor = (tag) => {
+  switch (tag.toLowerCase()) {
+    case 'veg': return 'bg-green-500 text-white';
+    case 'non-veg': return 'bg-red-500 text-white';
+    case 'bestseller': return 'bg-yellow-500 text-black';
+    case 'spicy': return 'bg-orange-500 text-white';
+    case "chef's special": return 'bg-purple-500 text-white';
+    case 'new': return 'bg-blue-500 text-white';
+    default: return 'bg-gray-500 text-white';
+  }
+};
+
+const App = () => {
+  const [selectedCategoryId, setSelectedCategoryId] = useState(mockCategories[0].id);
+  const [orderItems, setOrderItems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [currentCustomer, setCurrentCustomer] = useState({ name: 'Dine-In Table 5', type: 'dine-in' }); // Example customer
+
+  const filteredMenuItems = mockMenuItems.filter(item =>
+    item.categoryId === selectedCategoryId &&
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const addToOrder = (item) => {
+    setOrderItems(prevItems => {
+      const existingItem = prevItems.find(oi => oi.id === item.id);
+      if (existingItem) {
+        return prevItems.map(oi =>
+          oi.id === item.id ? { ...oi, quantity: oi.quantity + 1 } : oi
+        );
+      }
+      return [...prevItems, { ...item, quantity: 1 }];
+    });
+  };
+
+  const updateQuantity = (itemId, amount) => {
+    setOrderItems(prevItems =>
+      prevItems.map(item =>
+        item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item
+      ).filter(item => item.quantity > 0) // Remove if quantity becomes 0
+    );
+  };
+
+  const removeFromOrder = (itemId) => {
+    setOrderItems(prevItems => prevItems.filter(item => item.id !== itemId));
+  };
+
+  const calculateSubtotal = () => {
+    return orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
+
+  const GST_RATE = 0.05; // 5% GST for example
+  const subtotal = calculateSubtotal();
+  const gstAmount = subtotal * GST_RATE;
+  const totalAmount = subtotal + gstAmount;
+
+  // For responsive category display
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const categoriesToShow = showAllCategories ? mockCategories : mockCategories.slice(0, 3);
+
+
+  return (
+    <div className="flex flex-col md:flex-row h-screen bg-slate-100 font-sans">
+      {/* Left Panel: Menu Items */}
+      <div className="w-full md:w-3/5 p-4 overflow-y-auto">
+        <header className="mb-4 sticky top-0 bg-slate-100 py-2 z-10">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-3">
+            <h1 className="text-3xl font-bold text-slate-800">UniServe POS</h1>
+            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                 <button className="p-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">
+                    <LogOut size={20} />
+                 </button>
+                 <button className="p-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors">
+                    <Settings size={20} />
+                 </button>
+            </div>
+          </div>
+          <div className="relative mb-3">
+            <input
+              type="text"
+              placeholder="Search menu items..."
+              className="w-full p-3 pl-10 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-shadow"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+          </div>
+          <div className="flex flex-wrap items-center justify-between mb-1">
+            <div className="flex flex-wrap gap-2">
+                {categoriesToShow.map(category => (
+                <button
+                    key={category.id}
+                    onClick={() => setSelectedCategoryId(category.id)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ease-in-out
+                                ${selectedCategoryId === category.id ? 'bg-sky-600 text-white shadow-md scale-105' : 'bg-white text-slate-700 hover:bg-sky-100 border border-slate-300'}`}
+                >
+                    {category.icon}
+                    <span>{category.name}</span>
+                </button>
+                ))}
+                {mockCategories.length > 3 && (
+                    <button 
+                        onClick={() => setShowAllCategories(!showAllCategories)}
+                        className="px-3 py-2 rounded-lg text-sm font-medium bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors flex items-center"
+                    >
+                        {showAllCategories ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        <span className="ml-1">{showAllCategories ? 'Less' : 'More'}</span>
+                    </button>
+                )}
+            </div>
+            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+              <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600 hover:bg-sky-100 border border-slate-300'}`}>
+                <Grid size={20} />
+              </button>
+              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600 hover:bg-sky-100 border border-slate-300'}`}>
+                <List size={20} />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Menu Items Grid/List */}
+        <div className={` ${viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' : 'space-y-3'}`}>
+          {filteredMenuItems.length > 0 ? filteredMenuItems.map(item => (
+            <div
+              key={item.id}
+              className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all hover:shadow-xl cursor-pointer ${viewMode === 'list' ? 'flex items-center p-3' : 'p-0'}`}
+              onClick={() => addToOrder(item)}
+            >
+              <img 
+                src={item.image} 
+                alt={item.name} 
+                className={`${viewMode === 'grid' ? 'w-full h-40 object-cover' : 'w-20 h-20 object-cover rounded-md mr-3'}`} 
+                onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/150x150/E0E0E0/B0B0B0?text=No+Image"; }}
+              />
+              <div className={`${viewMode === 'grid' ? 'p-4' : 'flex-grow'}`}>
+                <h3 className="text-lg font-semibold text-slate-800 mb-1">{item.name}</h3>
+                <p className={`text-sm text-slate-500 mb-2 ${viewMode === 'grid' ? 'truncate' : 'line-clamp-2'}`}>{item.description}</p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {item.tags.map(tag => (
+                    <span key={tag} className={`px-2 py-0.5 text-xs rounded-full ${getTagColor(tag)}`}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-xl font-bold text-sky-600">₹{item.price.toFixed(2)}</p>
+                  {viewMode === 'grid' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); addToOrder(item); }}
+                      className="bg-sky-500 text-white p-2 rounded-full hover:bg-sky-600 transition-colors"
+                      aria-label={`Add ${item.name} to order`}
+                    >
+                      <PlusCircle size={20} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="col-span-full text-center py-10">
+                <Package size={48} className="mx-auto text-slate-400 mb-3" />
+                <p className="text-slate-500 text-lg">No items match your search in this category.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Panel: Order Summary */}
+      <div className="w-full md:w-2/5 bg-white p-6 shadow-xl flex flex-col">
+        <div className="flex justify-between items-center mb-4 border-b pb-3 border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800">Current Order</h2>
+            <div className="text-sm text-slate-600 font-medium bg-slate-100 px-3 py-1 rounded-full">
+                {currentCustomer.name} ({currentCustomer.type})
+            </div>
+        </div>
+
+        {orderItems.length === 0 ? (
+          <div className="flex-grow flex flex-col items-center justify-center text-slate-500">
+            <ShoppingCart size={64} className="mb-4 text-slate-400" />
+            <p className="text-lg">Your order is empty.</p>
+            <p className="text-sm">Add items from the menu to get started.</p>
+          </div>
+        ) : (
+          <div className="flex-grow overflow-y-auto pr-2 -mr-2 custom-scrollbar">
+            {orderItems.map(item => (
+              <div key={item.id} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-b-0">
+                <div className="flex-grow">
+                  <h4 className="font-semibold text-slate-700">{item.name}</h4>
+                  <p className="text-sm text-slate-500">₹{item.price.toFixed(2)}</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button onClick={() => updateQuantity(item.id, -1)} className="p-1 text-slate-500 hover:text-red-500 rounded-full transition-colors">
+                    <MinusCircle size={22} />
+                  </button>
+                  <span className="text-md font-medium text-slate-700 w-6 text-center">{item.quantity}</span>
+                  <button onClick={() => updateQuantity(item.id, 1)} className="p-1 text-slate-500 hover:text-green-500 rounded-full transition-colors">
+                    <PlusCircle size={22} />
+                  </button>
+                </div>
+                <p className="w-20 text-right font-semibold text-slate-800">₹{(item.price * item.quantity).toFixed(2)}</p>
+                <button onClick={() => removeFromOrder(item.id)} className="ml-3 text-slate-400 hover:text-red-600 transition-colors">
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Order Totals & Actions */}
+        {orderItems.length > 0 && (
+          <div className="mt-auto pt-6 border-t border-slate-200">
+            <div className="space-y-2 mb-4 text-md">
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal:</span>
+                <span className="font-medium">₹{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>GST ({ (GST_RATE * 100).toFixed(0) }%):</span>
+                <span className="font-medium">₹{gstAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xl font-bold text-slate-800">
+                <span>Total:</span>
+                <span>₹{totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button className="w-full flex items-center justify-center bg-slate-200 text-slate-700 font-semibold py-3 px-4 rounded-lg hover:bg-slate-300 transition-colors">
+                <Save size={18} className="mr-2"/> Hold Order
+              </button>
+               <button className="w-full flex items-center justify-center bg-red-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                <XCircle size={18} className="mr-2"/> Cancel Order
+              </button>
+              <button className="col-span-2 w-full flex items-center justify-center bg-sky-600 text-white font-bold py-4 px-4 rounded-lg hover:bg-sky-700 transition-colors text-lg">
+                <DollarSign size={20} className="mr-2"/> Proceed to Payment
+              </button>
+            </div>
+             <button className="mt-3 w-full flex items-center justify-center text-sky-600 font-semibold py-3 px-4 rounded-lg hover:bg-sky-50 transition-colors border border-sky-600">
+                <Printer size={18} className="mr-2"/> Print KOT
+              </button>
+          </div>
+        )}
+      </div>
+      {/* The 'jsx' and 'global' attributes are specific to styled-jsx.
+        Since we are not using styled-jsx here, these attributes are invalid on a standard <style> tag
+        and were causing the React warnings. Removing them resolves the issue.
+        The styles will still apply globally as expected for a standard <style> tag.
+      */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1; /* slate-300 */
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8; /* slate-500 */
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;  
+          overflow: hidden;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
